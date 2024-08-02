@@ -25,6 +25,10 @@
 const int resPin = 10; // set pins
 const int mfioPin = 9;
 
+int width = 411;
+int samples = 400; 
+int pulseWidthVal;
+int sampleVal;
 int heartRate;
 int oxygen;
 
@@ -36,47 +40,50 @@ bioData body;
 Adafruit_BluefruitLE_UART ble(Serial1, BLUEFRUIT_UART_MODE_PIN); // hardware serial 
 
 void error(const __FlashStringHelper*err) {
-  Serial.println(err);
+  ble.print("AT+BLEUARTTX=");
+  ble.println(err);
   while (1);
 } // for errors
 
 void setup(){
 
-  while (!Serial);  // required for Flora & Micro
   delay(500);
 
-  Serial.begin(115200);
-  Serial.println(F("Adafruit Bluefruit Command Mode Example"));
-  Serial.println(F("---------------------------------------"));
+  // Serial.begin(115200);
 
   /* Initialise the module */
-  Serial.print(F("Initialising the Bluefruit LE module: "));
+  ble.print("AT+BLEUARTTX=");
+  ble.println(F("Initialising the Bluefruit LE module: "));
 
   if ( !ble.begin(VERBOSE_MODE) )
   {
     error(F("Couldn't find Bluefruit, make sure it's in CoMmanD mode & check wiring?"));
   }
-  Serial.println( F("OK!") );
 
-  if ( FACTORYRESET_ENABLE )
-  {
-    /* Perform a factory reset to make sure everything is in a known state */
-    Serial.println(F("Performing a factory reset: "));
-    if ( ! ble.factoryReset() ){
-      error(F("Couldn't factory reset"));
-    }
-  }
+  ble.print("AT+BLEUARTTX=");
+  ble.println( F("OK!") );
+
+  // if ( FACTORYRESET_ENABLE )
+  // {
+  //   /* Perform a factory reset to make sure everything is in a known state */
+  //   Serial.println(F("Performing a factory reset: "));
+  //   if ( ! ble.factoryReset() ){
+  //     error(F("Couldn't factory reset"));
+  //   }
+  // }
 
   /* Disable command echo from Bluefruit */
   ble.echo(false);
 
-  Serial.println("Requesting Bluefruit info:");
+  ble.print("AT+BLEUARTTX=");
+  ble.println("Requesting Bluefruit info:");
   /* Print Bluefruit information */
   ble.info();
 
-  Serial.println(F("Please use Adafruit Bluefruit LE app to connect in UART mode"));
-  Serial.println(F("Then Enter characters to send to Bluefruit"));
-  Serial.println();
+  ble.print("AT+BLEUARTTX=");
+  ble.println(F("Please use Adafruit Bluefruit LE app to connect in UART mode"));
+  // Serial.println(F("Then Enter characters to send to Bluefruit"));
+  // Serial.println();
 
   ble.verbose(false);  // debug info is a little annoying after this point!
 
@@ -89,33 +96,94 @@ void setup(){
   if ( ble.isVersionAtLeast(MINIMUM_FIRMWARE_VERSION) )
   {
     // Change Mode LED Activity
-    Serial.println(F("******************************"));
-    Serial.println(F("Change LED activity to " MODE_LED_BEHAVIOUR));
+    ble.print("AT+BLEUARTTX=");
+    ble.println(F("******************************"));
+
+    ble.print("AT+BLEUARTTX=");
+    ble.println(F("Change LED activity to " MODE_LED_BEHAVIOUR));
+    
     ble.sendCommandCheckOK("AT+HWModeLED=" MODE_LED_BEHAVIOUR);
-    Serial.println(F("******************************"));
+
+    ble.print("AT+BLEUARTTX=");
+    ble.println(F("******************************"));
   }
 
   Wire.begin();
   int result = bioHub.begin();
-  if (!result)
-    Serial.println("Sensor started!");
-  else
-    Serial.println("Could not communicate with the sensor!!!");
+  if (!result) {
+    ble.print("AT+BLEUARTTX=");
+    ble.println("Sensor started!");
+  } else {
+    ble.print("AT+BLEUARTTX=");
+    ble.println("Could not communicate with the sensor!!!");
+  }
 
-  Serial.println("Configuring Sensor...."); 
-  int error = bioHub.configBpm(MODE_TWO); // Configuring just the BPM settings. 
+  ble.print("AT+BLEUARTTX=");
+  ble.println("Configuring Sensor...."); 
+  int error = bioHub.configBpm(MODE_ONE); // Configuring just the BPM settings. 
   if(!error){
-    Serial.println("Sensor configured.");
+    ble.print("AT+BLEUARTTX=");
+    ble.println("Sensor configured.");
   }
   else {
-    Serial.println("Error configuring sensor.");
-    Serial.print("Error: "); 
-    Serial.println(error); 
+    ble.print("AT+BLEUARTTX=");
+    ble.println("Error configuring sensor.");
+
+    ble.print("AT+BLEUARTTX=");
+    ble.print("Error: "); 
+    ble.println(error); 
   }
   // Data lags a bit behind the sensor, if you're finger is on the sensor when
   // it's being configured this delay will give some time for the data to catch
   // up. 
   delay(4000); 
+
+  error = bioHub.setPulseWidth(width);
+  
+  if (!error){
+      ble.print("AT+BLEUARTTX=");
+      ble.println("Pulse Width Set.");
+  }
+  else {
+      ble.print("AT+BLEUARTTX=");
+      ble.println("Could not set Pulse Width.");
+
+      ble.print("AT+BLEUARTTX=");
+      ble.print("Error: "); 
+      ble.println(error); 
+  }
+
+  // Check that the pulse width was set. 
+  pulseWidthVal = bioHub.readPulseWidth();
+  ble.print("AT+BLEUARTTX=");
+  ble.print("Pulse Width: ");
+  ble.println(pulseWidthVal);
+
+  // Set sample rate per second. Remember that not every sample rate is
+  // available with every pulse width. Check hookup guide for more information.  
+  error = bioHub.setSampleRate(samples);
+  if (!error){
+      ble.print("AT+BLEUARTTX=");
+      ble.println("Sample Rate Set.");
+  }
+  else {
+      ble.print("AT+BLEUARTTX=");
+      ble.println("Could not set Sample Rate!");
+
+      ble.print("AT+BLEUARTTX=");
+      ble.print("Error: "); 
+      ble.println(error); 
+  }
+
+  // Check sample rate.
+  sampleVal = bioHub.readSampleRate();
+
+  ble.print("AT+BLEUARTTX=");
+  ble.print("Sample rate is set to: ");
+  ble.println(sampleVal); 
+
+  // Some time to read your settings.
+  delay(2000);
 
 }
 
@@ -123,45 +191,51 @@ void loop(){
 
   // Information from the readBpm function will be saved to our "body"
   // variable.  
-  body = bioHub.readBpm();
-  Serial.print("Heartrate: ");
-  Serial.println(body.heartRate); 
-  Serial.print("Confidence: ");
-  Serial.println(body.confidence); 
-  Serial.print("Oxygen: ");
-  Serial.println(body.oxygen); 
-  Serial.print("Status: ");
-  Serial.println(body.status); 
-  Serial.print("Extended Status: ");
-  Serial.println(body.extStatus); 
-  Serial.print("Blood Oxygen R value: ");
-  Serial.println(body.rValue); 
-  delay(2000); // Slowing it down, we don't need to break our necks here.
+  body = bioHub.readSensorBpm();
+  // Serial.print("Infrared LED counts: ");
+  // Serial.println(body.irLed); 
+  // Serial.print("Red LED counts: ");
+  // Serial.println(body.redLed); 
+  // Serial.print("Heartrate: ");
+  // Serial.println(body.heartRate); 
+  // Serial.print("Confidence: ");
+  // Serial.println(body.confidence); 
+  // Serial.print("Blood Oxygen: ");
+  // Serial.println(body.oxygen); 
+  // Serial.print("Status: ");
+  // Serial.println(body.status); 
+  delay(1000); // Slowing it down
 
-    // Check for user input
-  char inputs[BUFSIZE+1];
+  //   // Check for user input
+  // char inputs[BUFSIZE+1];
 
-  // modified for project
-  Serial.print("[Send] Heartrate: ");
-  Serial.println(body.heartRate); 
+  if (body.status != 3) {
+    ble.print("AT+BLEUARTTX=");
+    ble.println("Realign wrist!");
+  } else {
+    // modified for project
+    ble.print("AT+BLEUARTTX=");
+    ble.print("Heartrate: ");
+    ble.println(body.heartRate);
+    delay(10);
+    
+    ble.print("AT+BLEUARTTX=");
+    ble.print("Confidence: ");
+    ble.println(body.confidence);
+    delay(10);
+    
+    ble.print("AT+BLEUARTTX=");
+    ble.print("Oxygen: ");
+    ble.println(body.oxygen);
+    delay(10);
 
-  ble.print("AT+BLEUARTTX=");
-  ble.print("Heartrate: ");
-  ble.println(body.heartRate);
-  
-  ble.print("AT+BLEUARTTX=");
-  ble.print("Confidence: ");
-  ble.println(body.confidence);
-  
-  ble.print("AT+BLEUARTTX=");
-  ble.print("Oxygen: ");
-  ble.println(body.oxygen);
-
-  // check response stastus
-  if (! ble.waitForOK() ) {
-    Serial.println(F("Failed to send?"));
-  
   }
+
+  // // check response stastus
+  // if (! ble.waitForOK() ) {
+  //   Serial.println(F("Failed to send?"));
+  
+  // }
 
   // // Check for incoming characters from Bluefruit
   // ble.println("AT+BLEUARTRX");
