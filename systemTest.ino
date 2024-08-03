@@ -5,16 +5,16 @@
 #include <SPI.h>
 #include "Adafruit_BLE.h"
 #include "Adafruit_BluefruitLE_SPI.h"
-#include "Adafruit_BluefruitLE_UART.h"
+#include "Adafruit_BluefruitLE_UART.h" 
 
-#include "BluefruitConfig.h"
+#include "BluefruitConfig.h" // include statements
 
 #if SOFTWARE_SERIAL_AVAILABLE
   #include <SoftwareSerial.h>
 #endif // for bluetooth
 
 
-#define FACTORYRESET_ENABLE         0 //has to be zero!
+#define FACTORYRESET_ENABLE         0 // has to be zero!
 #define MINIMUM_FIRMWARE_VERSION    "0.6.6"
 #define MODE_LED_BEHAVIOUR          "BLEUART" // define for BLE
 
@@ -22,20 +22,20 @@
 #define DEF_ADDR 0x55
 
 // Reset pin, MFIO pin
-const int resPin = 10; // set pins
-const int mfioPin = 9;
+const int resPin = 10; // A3
+const int mfioPin = 9; //A2
 
 int width = 411;
-int samples = 400; 
+int samples = 400; // set resolution to 18 bits
 int pulseWidthVal;
 int sampleVal;
 int heartRate;
-int oxygen;
+int oxygen; 
 
 // Takes address, reset pin, and MFIO pin.
 SparkFun_Bio_Sensor_Hub bioHub(resPin, mfioPin); 
 
-bioData body;  
+bioData body;
 
 Adafruit_BluefruitLE_UART ble(Serial1, BLUEFRUIT_UART_MODE_PIN); // hardware serial 
 
@@ -55,6 +55,7 @@ void setup(){
   ble.print("AT+BLEUARTTX=");
   ble.println(F("Initialising the Bluefruit LE module: "));
 
+  // helps debug
   if ( !ble.begin(VERBOSE_MODE) )
   {
     error(F("Couldn't find Bluefruit, make sure it's in CoMmanD mode & check wiring?"));
@@ -108,6 +109,7 @@ void setup(){
     ble.println(F("******************************"));
   }
 
+  // start sensor
   Wire.begin();
   int result = bioHub.begin();
   if (!result) {
@@ -159,8 +161,6 @@ void setup(){
   ble.print("Pulse Width: ");
   ble.println(pulseWidthVal);
 
-  // Set sample rate per second. Remember that not every sample rate is
-  // available with every pulse width. Check hookup guide for more information.  
   error = bioHub.setSampleRate(samples);
   if (!error){
       ble.print("AT+BLEUARTTX=");
@@ -204,14 +204,19 @@ void loop(){
   // Serial.println(body.oxygen); 
   // Serial.print("Status: ");
   // Serial.println(body.status); 
+
+  // serial monitor not used, so above section is unnecessary
   delay(1000); // Slowing it down
 
   //   // Check for user input
   // char inputs[BUFSIZE+1];
 
+  // if status is not 3 (finger/wrist detected), data will not print
   if (body.status != 3) {
     ble.print("AT+BLEUARTTX=");
     ble.println("Realign wrist!");
+
+  // print data otherwise
   } else {
     // modified for project
     ble.print("AT+BLEUARTTX=");
@@ -231,6 +236,8 @@ void loop(){
 
   }
 
+  // if user wanted to send String to serial monitor
+  
   // // check response stastus
   // if (! ble.waitForOK() ) {
   //   Serial.println(F("Failed to send?"));
