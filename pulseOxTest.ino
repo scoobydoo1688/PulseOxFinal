@@ -18,8 +18,9 @@ bioData body;
 
 void setup(){
 
-  Serial.begin(115200); // baud rate needs to match
+  Serial.begin(115200); // baud rate needs to match in serial monitor
 
+  // start sensor
   Wire.begin();
   int result = bioHub.begin();
   if (!result)
@@ -27,6 +28,7 @@ void setup(){
   else
     Serial.println("Could not communicate with the sensor!!!");
 
+  // configure sensor
   Serial.println("Configuring Sensor...."); 
   int error = bioHub.configBpm(MODE_TWO); // Configuring just the BPM settings. 
   if(!error){
@@ -37,6 +39,7 @@ void setup(){
     Serial.print("Error: "); 
     Serial.println(error); 
   }
+  
   // Data lags a bit behind the sensor, if you're finger is on the sensor when
   // it's being configured this delay will give some time for the data to catch
   // up. 
